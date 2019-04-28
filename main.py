@@ -2,28 +2,23 @@ import asyncio
 import curses
 import random
 import time
-from curses_tools import draw_frame, read_controls
+from curses_tools import draw_frame, read_controls, get_frame_size
 
 TIC_TIMEOUT = 0.1
 STARS = ('+', '*', '.', ':')
-STARS_COUNT = 50
-
-SPACE_KEY_CODE = 32
-LEFT_KEY_CODE = 260
-RIGHT_KEY_CODE = 261
-UP_KEY_CODE = 259
-DOWN_KEY_CODE = 258
+STARS_COUNT = 80
 
 
 def random_seconds():
-    return int(random.randint(3, 50) * 0.1 / TIC_TIMEOUT)
+    return int(random.randint(3, 20) * 0.1 / TIC_TIMEOUT)
 
 
 async def animate_spaceship():
     pass
 
 
-async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0):
+async def fire(canvas, start_row, start_column, rows_speed=-0.3,
+               columns_speed=0):
     """Display animation of gun shot. Direction and speed can be specified."""
 
     row, column = start_row, start_column
@@ -79,8 +74,9 @@ async def blink(canvas, window_size):
             canvas.addstr(row, column, symbol)
 
 
-async def draw_rocket(canvas, frame1, frame2, row, column):
+async def draw_rocket(canvas, frame1, frame2, row, column, window_size):
     canvas.nodelay(True)
+    frame_size = get_frame_size(frame1)
 
     draw_frame(canvas, row, column, frame1)
     # for _ in range(1):
@@ -90,17 +86,21 @@ async def draw_rocket(canvas, frame1, frame2, row, column):
         draw_frame(canvas, row, column, frame1, negative=True)
         # for _ in range(1):
         readkeys = read_controls(canvas)
-        row += readkeys[0]
+        if readkeys[0] < 0 and row < 1:  # or (readkeys[0] > 0 and row > window_size[0] - frame_size[0]):
+            row += readkeys[0]
         column += readkeys[1]
         draw_frame(canvas, row, column, frame2)
+        # for _ in range(1):
         await asyncio.sleep(0)
 
         draw_frame(canvas, row, column, frame2, negative=True)
         # for _ in range(1):
         readkeys = read_controls(canvas)
-        row += readkeys[0]
+        if readkeys[0] < 0 and row < 1:  # or (readkeys[0] > 0 and row > window_size[0] - frame_size[0]):
+            row += readkeys[0]
         column += readkeys[1]
         draw_frame(canvas, row, column, frame1)
+        # for _ in range(1):
         await asyncio.sleep(0)
 
 
@@ -121,7 +121,8 @@ def draw(canvas):
     coroutines = [
         *blink_list,
         fire(canvas, window_size[0] / 2, window_size[1] / 2,),
-        draw_rocket(canvas, frame_1, frame_2, window_size[0] / 2, window_size[1] / 2),
+        draw_rocket(canvas, frame_1, frame_2, window_size[0] - 11,
+                    window_size[1] / 2, window_size),
     ]
 
     while coroutines:
