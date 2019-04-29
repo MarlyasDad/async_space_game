@@ -9,14 +9,6 @@ STARS = ('+', '*', '.', ':')
 STARS_COUNT = 90
 
 
-def random_seconds():
-    return int(random.randint(3, 50) * 0.1 / TIC_TIMEOUT)
-
-
-async def animate_spaceship():
-    pass
-
-
 async def fire(canvas, start_row, start_column, rows_speed=-0.3,
                columns_speed=0):
     """Display animation of gun shot. Direction and speed can be specified."""
@@ -48,7 +40,17 @@ async def fire(canvas, start_row, start_column, rows_speed=-0.3,
         column += columns_speed
 
 
+def random_seconds():
+    """
+    Calculate count await-elements for drawing
+    """
+    return int(random.randint(3, 100) * 0.1 / TIC_TIMEOUT)
+
+
 async def blink(canvas, window_size):
+    """
+    Blink the star
+    """
     row = random.randint(1, window_size[0] - 2)
     column = random.randint(1, window_size[1] - 2)
     symbol = random.choice(STARS)
@@ -90,12 +92,15 @@ def calc_new_positions(readkeys, row, column, window_size, frame_size):
     return calc_row, calc_column
 
 
-async def draw_rocket(canvas, frame1, frame2, row, column, window_size):
+async def draw_rocket(canvas, frame1, frame2, window_size):
     """
     Draw and move the rocket
     """
     canvas.nodelay(True)
     frame_size = get_frame_size(frame1)
+
+    row = window_size[0] - frame_size[0] - 1
+    column = window_size[1]/2 - (int(frame_size[1]/2))
 
     draw_frame(canvas, row, column, frame1)
     await asyncio.sleep(0)
@@ -126,16 +131,13 @@ def draw(canvas):
     canvas.border(0)
     canvas.nodelay(True)
     window_size = canvas.getmaxyx()
-    frame_size = get_frame_size(frame1)
 
     blink_list = [blink(canvas, window_size) for _ in range(STARS_COUNT)]
 
     coroutines = [
         *blink_list,
         fire(canvas, window_size[0] / 2, window_size[1] / 2,),
-        draw_rocket(canvas, frame_1, frame_2,
-                    window_size[0] - frame_size[0] - 1,
-                    window_size[1] / 2, window_size),
+        draw_rocket(canvas, frame_1, frame_2, window_size),
     ]
 
     while coroutines:
