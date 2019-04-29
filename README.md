@@ -10,6 +10,6 @@
 * pipenv
 
 Запуск игры:
-cd "Path to main.py"
-pipenv shell
-python main.py
+* cd "Path to main.py"
+* pipenv shell
+* python main.py
