@@ -11,7 +11,7 @@
 
 Запуск игры:
 ```bash
-cd "Path to main.py"
-pipenv shell
-python main.py
+$ cd "Path to main.py"
+$ pipenv shell
+$ python main.py
 ```
