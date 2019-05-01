@@ -47,12 +47,10 @@ def random_seconds():
     return int(random.randint(3, 100) * 0.1 / TIC_TIMEOUT)
 
 
-async def blink(canvas, window_size):
+async def blink(canvas, row, column):
     """
     Blink the star
     """
-    row = random.randint(1, window_size[0] - 2)
-    column = random.randint(1, window_size[1] - 2)
     symbol = random.choice(STARS)
     while True:
         canvas.addstr(row, column, symbol, curses.A_DIM)
@@ -76,18 +74,28 @@ async def blink(canvas, window_size):
             canvas.addstr(row, column, symbol)
 
 
-def calc_new_positions(readkeys, row, column, window_size, frame_size):
+def calc_new_position(readkeys, row, column, window_size, frame_size):
     """
     Calculate the new coordinates of the rocket
     given the boundaries of the window
     """
+    move_down = move_right = 1
+    move_up = move_left = -1
+    rows_direction = readkeys[0]
+    columns_direction = readkeys[1]
+
+    up_border = left_border = 1
+    # left and right borders based on ship size
+    bottom_border = window_size[0] - frame_size[0] - 1
+    right_border = window_size[1] - frame_size[1] - 1
+
     calc_row = row
     calc_column = column
-    if (readkeys[0] < 0 and row > 1) or (
-            readkeys[0] > 0 and row < window_size[0] - frame_size[0] - 1):
+    if (rows_direction == move_up and row > up_border) or (
+            rows_direction == move_down and row < bottom_border):
         calc_row += readkeys[0]
-    if (readkeys[1] < 0 and column > 1) or (
-            readkeys[1] > 0 and column < window_size[1] - frame_size[1] - 1):
+    if (columns_direction == move_left and column > left_border) or (
+            columns_direction == move_right and column < right_border):
         calc_column += readkeys[1]
     return calc_row, calc_column
 
@@ -96,11 +104,16 @@ async def draw_rocket(canvas, frame1, frame2, window_size):
     """
     Draw and move the rocket
     """
-    canvas.nodelay(True)
     frame_size = get_frame_size(frame1)
 
-    row = window_size[0] - frame_size[0] - 1
-    column = window_size[1]/2 - (int(frame_size[1]/2))
+    window_size_y = window_size[0]
+    rocket_start_position_y = window_size_y - frame_size[0] - 1
+    row = rocket_start_position_y
+
+    window_center_x = int(window_size[1]/2)
+    frame_width_half = int(frame_size[1]/2)
+    rocket_start_position_x = window_center_x - frame_width_half
+    column = rocket_start_position_x
 
     draw_frame(canvas, row, column, frame1)
     await asyncio.sleep(0)
@@ -108,15 +121,15 @@ async def draw_rocket(canvas, frame1, frame2, window_size):
     while True:
         draw_frame(canvas, row, column, frame1, negative=True)
         readkeys = read_controls(canvas)
-        row, column = calc_new_positions(readkeys, row, column, window_size,
-                                         frame_size)
+        row, column = calc_new_position(readkeys, row, column, window_size,
+                                        frame_size)
         draw_frame(canvas, row, column, frame2)
         await asyncio.sleep(0)
 
         draw_frame(canvas, row, column, frame2, negative=True)
         readkeys = read_controls(canvas)
-        row, column = calc_new_positions(readkeys, row, column, window_size,
-                                         frame_size)
+        row, column = calc_new_position(readkeys, row, column, window_size,
+                                        frame_size)
         draw_frame(canvas, row, column, frame1)
         await asyncio.sleep(0)
 
@@ -130,15 +143,24 @@ def draw(canvas):
 
     canvas.border(0)
     canvas.nodelay(True)
+
     window_size = canvas.getmaxyx()
+    up_border = left_border = 1
+    bottom_border = window_size[0] - 2
+    right_border = window_size[1] - 2
 
-    blink_list = [blink(canvas, window_size) for _ in range(STARS_COUNT)]
+    coroutines = list()
 
-    coroutines = [
-        *blink_list,
-        fire(canvas, window_size[0] / 2, window_size[1] / 2,),
-        draw_rocket(canvas, frame_1, frame_2, window_size),
-    ]
+    for _ in range(STARS_COUNT):
+        row = random.randint(up_border, bottom_border)
+        column = random.randint(left_border, right_border)
+        coroutines.append(blink(canvas, row, column))
+
+    window_center_y = int(window_size[0] / 2)
+    window_center_x = int(window_size[1] / 2)
+
+    coroutines.append(fire(canvas, window_center_y, window_center_x))
+    coroutines.append(draw_rocket(canvas, frame_1, frame_2, window_size))
 
     while coroutines:
         for coroutine in coroutines:
@@ -148,8 +170,6 @@ def draw(canvas):
                 coroutines.remove(coroutine)
         canvas.refresh()
         time.sleep(TIC_TIMEOUT)
-        if len(coroutines) == 0:
-            break
 
 
 if __name__ == '__main__':
