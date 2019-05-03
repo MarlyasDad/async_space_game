@@ -79,24 +79,28 @@ def calc_new_position(readkeys, row, column, window_size, frame_size):
     Calculate the new coordinates of the rocket
     given the boundaries of the window
     """
+    border_depth = 1
+
     move_down = move_right = 1
     move_up = move_left = -1
-    rows_direction = readkeys[0]
-    columns_direction = readkeys[1]
+    rows_direction, columns_direction, space_pressed = readkeys
 
     up_border = left_border = 1
+    window_size_y, window_size_x = window_size
+    frame_size_y, frame_size_x = frame_size
+
     # left and right borders based on ship size
-    bottom_border = window_size[0] - frame_size[0] - 1
-    right_border = window_size[1] - frame_size[1] - 1
+    bottom_border = window_size_y - frame_size_y - border_depth
+    right_border = window_size_x - frame_size_x - border_depth
 
     calc_row = row
     calc_column = column
     if (rows_direction == move_up and row > up_border) or (
             rows_direction == move_down and row < bottom_border):
-        calc_row += readkeys[0]
+        calc_row += rows_direction
     if (columns_direction == move_left and column > left_border) or (
             columns_direction == move_right and column < right_border):
-        calc_column += readkeys[1]
+        calc_column += columns_direction
     return calc_row, calc_column
 
 
@@ -104,14 +108,17 @@ async def draw_rocket(canvas, frame1, frame2, window_size):
     """
     Draw and move the rocket
     """
-    frame_size = get_frame_size(frame1)
+    border_depth = 1
 
-    window_size_y = window_size[0]
-    rocket_start_position_y = window_size_y - frame_size[0] - 1
+    frame_size = get_frame_size(frame1)
+    frame_size_y, frame_size_x = frame_size
+    window_size_y, window_size_x = window_size
+
+    rocket_start_position_y = window_size_y - frame_size_y - border_depth
     row = rocket_start_position_y
 
-    window_center_x = int(window_size[1]/2)
-    frame_width_half = int(frame_size[1]/2)
+    window_center_x = int(window_size_x/2)
+    frame_width_half = int(frame_size_x/2)
     rocket_start_position_x = window_center_x - frame_width_half
     column = rocket_start_position_x
 
@@ -144,20 +151,24 @@ def draw(canvas):
     canvas.border(0)
     canvas.nodelay(True)
 
+    border_depth = 1
+    array_index_correction = 1
+
     window_size = canvas.getmaxyx()
-    up_border = left_border = 1
-    bottom_border = window_size[0] - 2
-    right_border = window_size[1] - 2
+    window_size_y, window_size_x = window_size
+    stars_up_border = stars_left_border = 1
+    stars_bottom_border = window_size_y - border_depth - array_index_correction
+    stars_right_border = window_size_x - border_depth - array_index_correction
 
     coroutines = list()
 
     for _ in range(STARS_COUNT):
-        row = random.randint(up_border, bottom_border)
-        column = random.randint(left_border, right_border)
+        row = random.randint(stars_up_border, stars_bottom_border)
+        column = random.randint(stars_left_border, stars_right_border)
         coroutines.append(blink(canvas, row, column))
 
-    window_center_y = int(window_size[0] / 2)
-    window_center_x = int(window_size[1] / 2)
+    window_center_y = int(window_size_y/2)
+    window_center_x = int(window_size_x/2)
 
     coroutines.append(fire(canvas, window_center_y, window_center_x))
     coroutines.append(draw_rocket(canvas, frame_1, frame_2, window_size))
