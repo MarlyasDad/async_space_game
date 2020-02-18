@@ -3,10 +3,19 @@ import curses
 import random
 import time
 from curses_tools import draw_frame, read_controls, get_frame_size
+from space_garbage import fly_garbage
 
 TIC_TIMEOUT = 0.1
 STARS = ('+', '*', '.', ':')
-STARS_COUNT = 90
+STARS_COUNT = 80
+
+coroutines = list()
+
+
+async def fill_orbit_with_garbage():
+    while True:
+        coroutines.append(fly_garbage)
+        await asyncio.sleep(1)
 
 
 async def fire(canvas, start_row, start_column, rows_speed=-0.3,
@@ -44,7 +53,7 @@ def random_seconds():
     """
     Calculate count await-elements for drawing
     """
-    return int(random.randint(3, 100) * 0.1 / TIC_TIMEOUT)
+    return int(random.randint(30, 100) * 0.1 / TIC_TIMEOUT)
 
 
 async def blink(canvas, row, column):
