@@ -12,10 +12,13 @@ STARS_COUNT = 80
 coroutines = list()
 
 
-async def fill_orbit_with_garbage():
+async def fill_orbit_with_garbage(canvas, garbage_frames, window_size):
+    _, window_size_x = window_size
     while True:
-        coroutines.append(fly_garbage)
-        await asyncio.sleep(1)
+        column = random.randint(1, window_size_x - 1)
+        frame = random.choice(garbage_frames)
+        coroutines.append(fly_garbage(canvas, column, frame, speed=0.5))
+        await asyncio.sleep(0)
 
 
 async def fire(canvas, start_row, start_column, rows_speed=-0.3,
@@ -157,6 +160,13 @@ def draw(canvas):
     with open('frames/rocket_frame_2.txt', 'r') as file:
         frame_2 = file.read()
 
+    garbage_names = ['duck', 'hubble', 'lamp', 'trash_large', 'trash_small',
+                     'trash_xl']
+    garbage_frames = list()
+    for name in garbage_names:
+        with open(f'frames/{name}.txt', 'r') as file:
+            garbage_frames.append(file.read())
+
     canvas.border(0)
     canvas.nodelay(True)
 
@@ -169,7 +179,7 @@ def draw(canvas):
     stars_bottom_border = window_size_y - border_depth - array_index_correction
     stars_right_border = window_size_x - border_depth - array_index_correction
 
-    coroutines = list()
+    # coroutines = list()
 
     for _ in range(STARS_COUNT):
         row = random.randint(stars_up_border, stars_bottom_border)
@@ -181,6 +191,7 @@ def draw(canvas):
 
     coroutines.append(fire(canvas, window_center_y, window_center_x))
     coroutines.append(draw_rocket(canvas, frame_1, frame_2, window_size))
+    coroutines.append(fill_orbit_with_garbage(canvas, garbage_frames, window_size))
 
     while coroutines:
         for coroutine in coroutines:
