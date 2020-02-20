@@ -4,12 +4,20 @@ import random
 import time
 from curses_tools import draw_frame, read_controls, get_frame_size
 from space_garbage import fly_garbage
+from physics import update_speed
 
 TIC_TIMEOUT = 0.1
 STARS = ('+', '*', '.', ':')
 STARS_COUNT = 80
 
-coroutines = list()
+coroutines: list = list()
+obstacles: list = list()
+spaceship_frame: str = ''
+
+
+async def sleep(tics=1):
+    for i in range(tics):
+        await asyncio.sleep(0)
 
 
 async def fill_orbit_with_garbage(canvas, garbage_frames, window_size):
@@ -18,7 +26,7 @@ async def fill_orbit_with_garbage(canvas, garbage_frames, window_size):
         column = random.randint(1, window_size_x - 1)
         frame = random.choice(garbage_frames)
         coroutines.append(fly_garbage(canvas, column, frame, speed=0.5))
-        await asyncio.sleep(0)
+        await sleep(20)
 
 
 async def fire(canvas, start_row, start_column, rows_speed=-0.3,
@@ -29,7 +37,6 @@ async def fire(canvas, start_row, start_column, rows_speed=-0.3,
 
     canvas.addstr(round(row), round(column), '*')
     await asyncio.sleep(0)
-
     canvas.addstr(round(row), round(column), 'O')
     await asyncio.sleep(0)
     canvas.addstr(round(row), round(column), ' ')
@@ -56,7 +63,7 @@ def random_seconds():
     """
     Calculate count await-elements for drawing
     """
-    return int(random.randint(30, 100) * 0.1 / TIC_TIMEOUT)
+    return int(random.randint(10, 80) * 0.1 / TIC_TIMEOUT)
 
 
 async def blink(canvas, row, column):
@@ -65,22 +72,22 @@ async def blink(canvas, row, column):
     """
     symbol = random.choice(STARS)
     while True:
-        canvas.addstr(row, column, symbol, curses.A_DIM)
+        # await sleep(random_seconds())
+        for _ in range(random_seconds()):
+            await asyncio.sleep(0)
+            canvas.addstr(row, column, symbol, curses.A_DIM)
+
+        # await sleep(random_seconds())
         for _ in range(random_seconds()):
             await asyncio.sleep(0)
             canvas.addstr(row, column, symbol)
 
-        canvas.addstr(row, column, symbol)
+        # await sleep(random_seconds())
         for _ in range(random_seconds()):
             await asyncio.sleep(0)
-            canvas.addstr(row, column, symbol)
+            canvas.addstr(row, column, symbol, curses.A_BOLD)
 
-        canvas.addstr(row, column, symbol, curses.A_BOLD)
-        for _ in range(random_seconds()):
-            await asyncio.sleep(0)
-            canvas.addstr(row, column, symbol)
-
-        canvas.addstr(row, column, symbol)
+        # await sleep(random_seconds())
         for _ in range(random_seconds()):
             await asyncio.sleep(0)
             canvas.addstr(row, column, symbol)
@@ -116,13 +123,23 @@ def calc_new_position(readkeys, row, column, window_size, frame_size):
     return calc_row, calc_column
 
 
-async def draw_rocket(canvas, frame1, frame2, window_size):
+async def animate_spaceship(frame1, frame2):
+    # TODO:
+    # while True:
+    global spaceship_frame
+    spaceship_frame = frame1
+    await asyncio.sleep(0)
+
+
+async def run_spaceship(canvas, window_size):
     """
     Draw and move the rocket
     """
+    last_frame: str = ''
     border_depth = 1
+    # TODO:
 
-    frame_size = get_frame_size(frame1)
+    frame_size = get_frame_size(spaceship_frame)
     frame_size_y, frame_size_x = frame_size
     window_size_y, window_size_x = window_size
 
@@ -134,22 +151,25 @@ async def draw_rocket(canvas, frame1, frame2, window_size):
     rocket_start_position_x = window_center_x - frame_width_half
     column = rocket_start_position_x
 
-    draw_frame(canvas, row, column, frame1)
+    draw_frame(canvas, row, column, spaceship_frame)
+    last_frame = spaceship_frame
     await asyncio.sleep(0)
 
     while True:
-        draw_frame(canvas, row, column, frame1, negative=True)
+        draw_frame(canvas, row, column, last_frame, negative=True)
         readkeys = read_controls(canvas)
         row, column = calc_new_position(readkeys, row, column, window_size,
                                         frame_size)
-        draw_frame(canvas, row, column, frame2)
+        draw_frame(canvas, row, column, spaceship_frame)
+        last_frame = spaceship_frame
         await asyncio.sleep(0)
 
-        draw_frame(canvas, row, column, frame2, negative=True)
+        draw_frame(canvas, row, column, last_frame, negative=True)
         readkeys = read_controls(canvas)
         row, column = calc_new_position(readkeys, row, column, window_size,
                                         frame_size)
-        draw_frame(canvas, row, column, frame1)
+        draw_frame(canvas, row, column, spaceship_frame)
+        last_frame = spaceship_frame
         await asyncio.sleep(0)
 
 
@@ -179,8 +199,7 @@ def draw(canvas):
     stars_bottom_border = window_size_y - border_depth - array_index_correction
     stars_right_border = window_size_x - border_depth - array_index_correction
 
-    # coroutines = list()
-
+    # Creating stars
     for _ in range(STARS_COUNT):
         row = random.randint(stars_up_border, stars_bottom_border)
         column = random.randint(stars_left_border, stars_right_border)
@@ -190,7 +209,8 @@ def draw(canvas):
     window_center_x = int(window_size_x/2)
 
     coroutines.append(fire(canvas, window_center_y, window_center_x))
-    coroutines.append(draw_rocket(canvas, frame_1, frame_2, window_size))
+    coroutines.append(animate_spaceship(frame_1, frame_2))
+    coroutines.append(run_spaceship(canvas, window_size))
     coroutines.append(fill_orbit_with_garbage(canvas, garbage_frames, window_size))
 
     while coroutines:
