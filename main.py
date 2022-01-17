@@ -292,7 +292,7 @@ def draw(canvas):
     coroutines.append(fill_orbit_with_garbage(canvas, garbage_frames, window_size, border_depth))
 
     while coroutines:
-        for coroutine in coroutines:
+        for coroutine in coroutines.copy():
             try:
                 coroutine.send(None)
             except StopIteration:

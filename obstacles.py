@@ -24,7 +24,9 @@ class Obstacle:
         return row, column, self.get_bounding_box_frame()
 
     def has_collision(self, obj_corner_row, obj_corner_column, obj_size_rows=1, obj_size_columns=1):
-        '''Determine if collision has occured. Return True or False.'''
+        """
+        Determine if collision has occured. Return True or False.
+        """
         return has_collision(
             (self.row, self.column),
             (self.rows_size, self.columns_size),
