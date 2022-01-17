@@ -16,15 +16,21 @@
 * Пожалуйста, постарайтесь не мусорить на земле и в космосе. Берегите вселенную, мать Вашу!
 
 ## Для игры требуется:
-* Python 3.7+
+* Python 3.9+
 * curses (for mac and linux) or windows-curses (for windows)
 * pipenv
 
-## Запуск игры:
+## Создание виртуального окружения и запуск игры:
+
 ```bash
 $ cd "Path to main.py"
 $ pipenv shell
 $ python main.py
+```
+Для Windows перед запуском необходимо установить пакет curses
+
+```bash
+$ pipenv install windows-curses==2.3.0
 ```
 
 ## Дополнительная информация

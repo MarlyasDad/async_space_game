@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from curses_tools import draw_frame, read_controls, get_frame_size
 from space_garbage import fly_garbage
 from physics import update_speed
-# from obstacles import show_obstacles
 
 
 @dataclass
@@ -38,15 +37,17 @@ async def sleep(tics=1):
         await asyncio.sleep(0)
 
 
-async def fill_orbit_with_garbage(canvas, garbage_frames, window_size, border_depth):
+async def fill_orbit_with_garbage(canvas, garbage_frames, window_size,
+                                  border_depth):
     global is_running
     global level, max_level, garbage_speed
 
     await sleep(20)
     while is_running.state:
         frame = random.choice(garbage_frames)
-        coroutines.append(fly_garbage(canvas, frame, obstacles, obstacles_in_last_collisions, is_running, window_size,
-                                      border_depth, speed=garbage_speed))
+        coroutines.append(fly_garbage(
+            canvas, frame, obstacles, obstacles_in_last_collisions, is_running,
+            window_size, border_depth, speed=garbage_speed))
         await sleep(max_level + 1 - level)
 
 
@@ -72,7 +73,8 @@ async def level_increase(canvas):
             weapon = True
 
 
-async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0):
+async def fire(canvas, start_row, start_column, rows_speed=-0.3,
+               columns_speed=0):
     """
     Display animation of gun shot. Direction and speed can be specified.
     """
@@ -109,7 +111,7 @@ async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0
                 return
 
 
-def random_seconds():
+def random_ticks():
     """
     Calculate count await-elements for drawing
     """
@@ -122,28 +124,25 @@ async def blink(canvas, row, column):
     """
     symbol = random.choice(STARS)
     while True:
-        # await sleep(random_seconds())
-        for _ in range(random_seconds()):
+        for _ in range(random_ticks()):
             await asyncio.sleep(0)
             canvas.addstr(row, column, symbol, curses.A_DIM)
 
-        # await sleep(random_seconds())
-        for _ in range(random_seconds()):
+        for _ in range(random_ticks()):
             await asyncio.sleep(0)
             canvas.addstr(row, column, symbol)
 
-        # await sleep(random_seconds())
-        for _ in range(random_seconds()):
+        for _ in range(random_ticks()):
             await asyncio.sleep(0)
             canvas.addstr(row, column, symbol, curses.A_BOLD)
 
-        # await sleep(random_seconds())
-        for _ in range(random_seconds()):
+        for _ in range(random_ticks()):
             await asyncio.sleep(0)
             canvas.addstr(row, column, symbol)
 
 
-def move_spaceship(readkeys, row, column, window_size, frame_size, border_depth):
+def move_spaceship(readkeys, row, column, window_size, frame_size,
+                   border_depth):
     """
     Calculate the new coordinates of the rocket
     given the boundaries of the window
@@ -159,7 +158,8 @@ def move_spaceship(readkeys, row, column, window_size, frame_size, border_depth)
     bottom_border = window_size_y - frame_size_y - border_depth
     right_border = window_size_x - frame_size_x - border_depth
 
-    ship_row_speed, ship_col_speed = update_speed(ship_row_speed, ship_col_speed, rows_direction, columns_direction)
+    ship_row_speed, ship_col_speed = update_speed(
+        ship_row_speed, ship_col_speed, rows_direction, columns_direction)
 
     calc_row, calc_column = row + ship_row_speed, column + ship_col_speed
 
@@ -210,18 +210,19 @@ async def run_spaceship(canvas, window_size, border_depth):
         while True:
             draw_frame(canvas, row, column, last_frame, negative=True)
             readkeys = read_controls(canvas)
-            row, column = move_spaceship(readkeys, row, column, window_size, frame_size, border_depth)
+            row, column = move_spaceship(readkeys, row, column, window_size,
+                                         frame_size, border_depth)
             draw_frame(canvas, row, column, spaceship_frame)
             last_frame = spaceship_frame
 
             _, _, space_pressed = readkeys
             if space_pressed and weapon:
                 coroutines.append(fire(canvas, row, column + frame_width_half))
-                # await asyncio.sleep(0)
             await asyncio.sleep(0)
 
             for obstacle in obstacles:
-                if obstacle.has_collision(row, column, frame_size_y, frame_size_x):
+                if obstacle.has_collision(row, column, frame_size_y,
+                                          frame_size_x):
                     return
     finally:
         is_running.state = False
@@ -262,7 +263,8 @@ def draw(canvas):
     with open('frames/rocket_frame_2.txt', 'r') as file:
         frame_2 = file.read()
 
-    garbage_names = ['duck', 'hubble', 'lamp', 'trash_large', 'trash_small', 'trash_xl']
+    garbage_names = ['duck', 'hubble', 'lamp', 'trash_large', 'trash_small',
+                     'trash_xl']
     garbage_frames = list()
     for name in garbage_names:
         with open(f'frames/{name}.txt', 'r') as file:
@@ -285,11 +287,11 @@ def draw(canvas):
         column = random.randint(stars_left_border, stars_right_border)
         coroutines.append(blink(canvas, row, column))
 
-    # coroutines.append(show_obstacles(canvas, obstacles))
     coroutines.append(level_increase(canvas))
     coroutines.append(animate_spaceship(frame_1, frame_2))
     coroutines.append(run_spaceship(canvas, window_size, border_depth))
-    coroutines.append(fill_orbit_with_garbage(canvas, garbage_frames, window_size, border_depth))
+    coroutines.append(fill_orbit_with_garbage(canvas, garbage_frames,
+                                              window_size, border_depth))
 
     while coroutines:
         for coroutine in coroutines.copy():

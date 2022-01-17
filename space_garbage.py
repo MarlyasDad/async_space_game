@@ -6,9 +6,11 @@ from obstacles import Obstacle
 from exploison import explode
 
 
-async def fly_garbage(canvas, garbage_frame, obstacles, collisions, is_running, window_size, border_depth, speed=0.5):
+async def fly_garbage(canvas, garbage_frame, obstacles, collisions, is_running,
+                      window_size, border_depth, speed=0.5):
     """
-    Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start.
+    Animate garbage, flying from top to bottom. Сolumn position will stay same,
+    as specified on start.
     """
     _, window_size_x = window_size
 
@@ -19,7 +21,8 @@ async def fly_garbage(canvas, garbage_frame, obstacles, collisions, is_running, 
 
     row = 1
 
-    column = random.randint(border_depth + frame_size_x, window_size_x - border_depth - frame_size_x)
+    column = random.randint(border_depth + frame_size_x,
+                            window_size_x - border_depth - frame_size_x)
 
     obstacle = Obstacle(row, column, frame_size_y, frame_size_x)
     obstacles.append(obstacle)
@@ -33,7 +36,8 @@ async def fly_garbage(canvas, garbage_frame, obstacles, collisions, is_running, 
             row += speed
 
             if obstacle in collisions or not is_running.state:
-                await explode(canvas, row + median([0, frame_size_y]), column + median([0, frame_size_x]))
+                await explode(canvas, row + median([0, frame_size_y]),
+                              column + median([0, frame_size_x]))
                 return
     finally:
         obstacles.remove(obstacle)
